@@ -9,12 +9,24 @@ var objects = [];
 //add camera rotation
 var clock = new THREE.Clock();
 var controls;
-var maxHeight = 0;
+
 var areas_cache = {};
 var connect_cache = {};
 
 
 //utility function
+function calcHeight(){
+	var maxHeight = 0;
+	for(var i = 1; i < objects.length; i++){
+		var voxel = objects[i];
+		var height = (voxel.position.y-25)/50 + 1;
+		if(height > maxHeight){
+			maxHeight = height;
+		}
+	}
+	return maxHeight;
+}
+
 function isAdjacent(v1,v2){
 	var samePos = 0;
 	var adjacentPos = 0;
@@ -93,7 +105,7 @@ function build_areas(voxel){
 	var key = "";
 	key += voxel.position.x.toString() + ',' + voxel.position.z.toString();
 	if(areas_cache[key] == undefined){
-		areas_cache[key] = 0;
+		areas_cache[key] = 1;
 	}else{
 		areas_cache[key]++;
 	}
@@ -192,15 +204,13 @@ function loadProgress(){
 		voxel.position.copy(loadedObj[i]);
 		scene.add( voxel );
 		objects.push( voxel );
-		var height = (voxel.position.y-25)/50 + 1;
-			if(height > maxHeight){
-				maxHeight = height;						
-			}
+
+		document.getElementById('maxHeight').innerHTML = calcHeight();
 		document.getElementById('areas').innerHTML = build_areas(voxel);
 		document.getElementById('connectivity').innerHTML = build_connect(voxel);
 			
 	}
-	document.getElementById('maxHeight').innerHTML = maxHeight;
+	document.getElementById('maxHeight').innerHTML = calcHeight();
 	document.getElementById('numCubes').innerHTML = objects.length-1;
 
 	// render();
@@ -321,6 +331,7 @@ function onDocumentMouseDown( event ) {
 				document.getElementById('numCubes').innerHTML = objects.length-1;
 				document.getElementById('areas').innerHTML = areas;
 				document.getElementById('connectivity').innerHTML = remove_connect();
+				document.getElementById('maxHeight').innerHTML = calcHeight();
 			}
 		// create cube
 		} else {
@@ -331,13 +342,7 @@ function onDocumentMouseDown( event ) {
 			scene.add( voxel );
 			objects.push( voxel );
 
-			
-
-			var height = (voxel.position.y-25)/50 + 1;
-			if(height > maxHeight){
-				maxHeight = height;
-				document.getElementById('maxHeight').innerHTML = maxHeight;
-			}
+			document.getElementById('maxHeight').innerHTML = calcHeight();
 			document.getElementById('numCubes').innerHTML = objects.length-1;
 			document.getElementById('areas').innerHTML = build_areas(voxel);
 			document.getElementById('connectivity').innerHTML = build_connect(voxel);

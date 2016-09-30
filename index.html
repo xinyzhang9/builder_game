@@ -33,12 +33,27 @@
 				color: #000000;
 				background-color: rgba(0,255,255,0.75);
 			}
+			.notice{
+				color: red;
+			}
+			.stats{
+				position: absolute;
+				top: 20%;
+				right:10%;
+				text-align: left;
+			}
 		</style>
 	</head>
 	<body>
 		<div id="menu">
-			<button id = 'save'>SAVE</button>
-			<button id = 'load'>LOAD</button>
+<!-- 			<button id = 'save'>SAVE</button>
+ -->			<button id = 'load'>LOAD CHECKPOINT</button>
+ 				<button id = 'resetCam'>RESET CAMERA</button>
+		</div>
+		<div class = "stats">
+			Cubes used: <span id = 'numCubes'>0</span></br>
+			Maxmim Height: <span id = "maxHeight">0</span>
+
 		</div>
 		<script src="js/three.min.js"></script>
 		<script src = "js/orbitControls.js"></script>
@@ -57,17 +72,9 @@
 			//add camera rotation
 			var clock = new THREE.Clock();
 			var controls;
+			var maxHeight = 0;
 
 			function saveProgress(){
-				//test only one cube
-				// var obj = objects[objects.length-1]
-				// var pos = {};
-				// pos.x = obj.position.x;
-				// pos.y = obj.position.y;
-				// pos.z = obj.position.z;
-				// localStorage.setItem("json", JSON.stringify(pos));
-
-				//test all cubes
 				objs = [];
 				var selected = objects.slice(1); //not include first roll-over on
 				for(var i in selected){
@@ -78,16 +85,17 @@
 
 					objs.push(pos);
 				}
-				console.log(objs);
+				// console.log('saved',objs);
 
-				localStorage.setItem("json", JSON.stringify(objs));
+				localStorage.setItem("builderSave", JSON.stringify(objs));
 			}
 
 			function loadProgress(){
 				scene = null;
-				objects = [];
+				
 
 				scene = new THREE.Scene();
+				objects = [];
 				// roll-over helpers
 				rollOverGeo = new THREE.BoxGeometry( 50, 50, 50 );
 				rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
@@ -134,21 +142,17 @@
 
 
 
-				var json = localStorage.getItem("json");
+				var json = localStorage.getItem("builderSave");
 				var loadedObj = JSON.parse(json);
-				console.log(loadedObj);
 
 				for(var i in loadedObj){
 					var voxel = new THREE.Mesh( cubeGeo, cubeMaterial );
 					voxel.position.copy(loadedObj[i]);
 					scene.add( voxel );
 					objects.push( voxel );
-					console.log(voxel);
-					scene.add( voxel );
-					objects.push( voxel );
 				}
 
-				render();
+				// render();
 
 			}
 			
@@ -162,7 +166,7 @@
 				info.style.top = '10px';
 				info.style.width = '100%';
 				info.style.textAlign = 'center';
-				info.innerHTML = '<strong>click</strong>: add voxel, <strong>shift + click</strong>: remove voxel';
+				info.innerHTML = '<p><strong>click</strong>: add cube, <strong>shift + click</strong>: remove cube</p><p><span class = "notice">Auto-Save Enabled</span></p>';
 				container.appendChild( info );
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
 				camera.position.set( 500, 800, 1300 );
@@ -224,9 +228,10 @@
 					loadProgress();
 				});
 
-				var save_button = document.getElementById('save');
-				save_button.addEventListener('click',function(event){
-					saveProgress();
+				var resetCAM_button = document.getElementById('resetCam');
+				resetCAM_button.addEventListener('click',function(event){
+					camera.position.set( 500, 800, 1300 );
+					camera.lookAt( new THREE.Vector3() );
 				})
 			}
 			function onWindowResize() {
@@ -258,6 +263,7 @@
 						if ( intersect.object != plane ) {
 							scene.remove( intersect.object );
 							objects.splice( objects.indexOf( intersect.object ), 1 );
+							document.getElementById('numCubes').innerHTML = objects.length-1;
 						}
 					// create cube
 					} else {
@@ -267,7 +273,16 @@
 						console.log('voxel',voxel);
 						scene.add( voxel );
 						objects.push( voxel );
+
+						var height = (voxel.position.y-25)/50 + 1;
+						if(height > maxHeight){
+							maxHeight = height;
+							document.getElementById('maxHeight').innerHTML = maxHeight;
+						}
+						document.getElementById('numCubes').innerHTML = objects.length-1;
+
 					}
+					saveProgress();
 					render();
 				}
 				// console.log(objects);

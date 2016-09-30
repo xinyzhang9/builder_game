@@ -11,9 +11,83 @@ var clock = new THREE.Clock();
 var controls;
 var maxHeight = 0;
 var areas_cache = {};
+var connect_cache = {};
 
 
 //utility function
+function isAdjacent(v1,v2){
+	var samePos = 0;
+	var adjacentPos = 0;
+	if(v1.position.x === v2.position.x){
+		samePos++;
+	}
+	if(v1.position.y === v2.position.y){
+		samePos++;
+	}
+	if(v1.position.z === v2.position.z){
+		samePos++;
+	}
+	if(samePos < 2){
+		return false;
+	}
+	if(Math.abs(v1.position.x - v2.position.x) === 50){
+		adjacentPos++;
+	}
+	if(Math.abs(v1.position.y - v2.position.y) === 50){
+		adjacentPos++;
+	}
+	if(Math.abs(v1.position.z - v2.position.z) === 50){
+		adjacentPos++;
+	}
+	if(adjacentPos === 1){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+function build_connect(voxel){
+	// console.dir(connect_cache);
+	var keys_to_merge = [];
+	for(var key in connect_cache){
+		var list = connect_cache[key];
+		for(var i= 0; i < list.length; i++){
+			// console.log(list[i]);
+			if(isAdjacent(list[i],voxel)){
+				if(keys_to_merge.indexOf(key) < 0){
+					keys_to_merge.push(key);
+				}
+			}
+		}
+	}
+	console.dir(connect_cache);
+	//merge connected keys
+
+	if(keys_to_merge.length > 0){
+		destinity = keys_to_merge[0];
+		connect_cache[destinity].push(voxel);
+		
+		for(var i = 1; i < keys_to_merge.length; i++){
+			connect_cache[destinity] = connect_cache[destinity].concat(connect_cache[keys_to_merge[i]]);
+			delete connect_cache[keys_to_merge[i]];
+		}
+	}else{
+		connect_cache[voxel.id.toString()] = [voxel];
+	}
+
+	console.log(Object.keys(connect_cache).length);
+	return Object.keys(connect_cache).length;
+}
+
+function remove_connect(){
+	//just redo the build_connect
+	connect_cache = {};
+	for(var i = 1; i < objects.length; i++){
+		build_connect(objects[i]);
+	}
+	return Object.keys(connect_cache).length;
+
+}
 
 function build_areas(voxel){
 	var key = "";
@@ -123,6 +197,7 @@ function loadProgress(){
 				maxHeight = height;						
 			}
 		document.getElementById('areas').innerHTML = build_areas(voxel);
+		document.getElementById('connectivity').innerHTML = build_connect(voxel);
 			
 	}
 	document.getElementById('maxHeight').innerHTML = maxHeight;
@@ -245,6 +320,7 @@ function onDocumentMouseDown( event ) {
 
 				document.getElementById('numCubes').innerHTML = objects.length-1;
 				document.getElementById('areas').innerHTML = areas;
+				document.getElementById('connectivity').innerHTML = remove_connect();
 			}
 		// create cube
 		} else {
@@ -264,6 +340,7 @@ function onDocumentMouseDown( event ) {
 			}
 			document.getElementById('numCubes').innerHTML = objects.length-1;
 			document.getElementById('areas').innerHTML = build_areas(voxel);
+			document.getElementById('connectivity').innerHTML = build_connect(voxel);
 
 		}
 		saveProgress();
